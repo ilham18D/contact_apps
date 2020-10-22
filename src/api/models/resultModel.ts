@@ -1,6 +1,6 @@
 export interface RequestResult<T> {
     loading: boolean;
-    result: T;
+    result: any;
     error?: Error;
   }
   

@@ -1,38 +1,48 @@
 import React from "react";
 import MaterialTable from "material-table";
+import {RequestResult, ModelContact} from '../../api/models';
 
-
+export interface ModelResultContact {
+  message: string;
+  data:ModelContact;
+}
+  
 export default function ContentPage(){
-  const { useState } = React;
-  const [columns, setColumns] = useState([
-    { title: 'Name', field: 'name', editable: 'onUpdate' },
-    { title: 'Surname', field: 'surname', editable: 'never' },
-    { title: 'Birth Year', field: 'birthYear', type: 'numeric' },
-    {
-      title: 'Birth Place',
-      field: 'birthCity',
-      lookup: { 34: 'İstanbul', 63: 'Şanlıurfa' },
-    },
-  ]);
-  const [data, setData] = useState([
-    { name: 'Mehmet', surname: 'Baran', birthYear: 1987, birthCity: 63 },
-    { name: 'Zerya Betül', surname: 'Baran', birthYear: 2017, birthCity: 34 },
-  ]);
+
+  const [contact, setDataContact] = React.useState<RequestResult<ModelResultContact[]>>({
+    loading: false,
+    result: [],
+  })
+
+  React.useEffect( () => {
+    getData();
+  },[])
+
+  const getData = async () => {
+    try {
+    
+      fetch(`https://simple-contact-crud.herokuapp.com/contact`)
+      .then(res => res.json() )
+      .then(res => setDataContact({loading:false, result:res}) )
+   
+      // throw new Error(result.statusText);
+    } catch (error) {
+      console.log(error)
+      alert(error.message);
+    }
+  }
+  console.log(contact.result.data);
   return (
     <React.Fragment>
       <MaterialTable
       title="Simple Action Preview"
       columns={[
-        { title: 'Name', field: 'name' },
-        { title: 'Surname', field: 'surname' },
-        { title: 'Birth Year', field: 'birthYear', type: 'numeric' },
-        {
-          title: 'Birth Place',
-          field: 'birthCity',
-          lookup: { 34: 'İstanbul', 63: 'Şanlıurfa' },
-        },
+        { title: 'age', field: 'age' },
+        { title: 'firstName', field: 'firstName' },
+        { title: 'lastName', field: 'lastName' },
+        { title: 'photo', field: 'photo' },
       ]}
-      data={data}        
+      data={contact.result.data}
       actions={[
         {
           icon: 'save',
@@ -41,6 +51,7 @@ export default function ContentPage(){
         }
       ]}
     />
+     
     </React.Fragment>
   )
 }
