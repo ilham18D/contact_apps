@@ -1,106 +1,122 @@
 import React from "react";
 import MaterialTable from "material-table";
-import {RequestResult, ModelContact} from '../../api/models';
+import {RequestResult, ModelContact, ObjectModelContact} from '../../api/models';
 import LinearProgress from "@material-ui/core/LinearProgress";
 import DailogAddForm from "./dailogAddForm";
 import { Alert } from "@material-ui/lab";
-export interface ModelResultContact {
-  message: string;
-  data:ModelContact;
-}
-  
+import axios from 'axios';
+import {
+  RootState,
+  contactAddMany,
+  contacUpdate,
+  contactAdd,
+  contactDelete
+} from '../../store'
+
+import { useDispatch, useSelector } from "react-redux";
 export default function ContentPage(){
+  const dispatch = useDispatch();
+  const contactState = useSelector((state:RootState) => 
+  state.contac
+  );
   const [openDialogAdd, setOpenDialogAdd] = React.useState(false);
-  const [contact, setDataContact] = React.useState<RequestResult<ModelResultContact[]>>({
+  const [stateLoading, setStateLoading] = React.useState<RequestResult<ObjectModelContact[]>>({
     loading: false,
-    result: {data:[]},
   })
-
   React.useEffect( () => {
-    getData();
+    getData()
+    // eslint-disable-next-line
   },[])
-
-  const loadData = React.useCallback(async () => {
+  const loadData = async () => {
     getData();
-  }, []);
-
+  }
   const getData = async () => {
     try {
-      setDataContact(v => ({ ...v, loading: true }));
-      fetch(`https://simple-contact-crud.herokuapp.com/contact`)
-      .then(res => res.json() )
-      .then(res => setDataContact({loading:false, result:res}) )
+      setStateLoading({loading:true});
+      const urlApi = await axios.get(`https://simple-contact-crud.herokuapp.com/contact`);
+      if(urlApi.status === 200) {
+        setStateLoading({loading:false});
+        dispatch(contactAddMany(urlApi.data.data))
+      }
     } catch (error) {
-      alert(error.message);
+      alert(error.message)
     }
   }
-
-  const post = React.useCallback( async (newData:ModelContact ) => {
-      try {
-        setDataContact(v => ({ ...v, loading: true }));
-        fetch(`https://simple-contact-crud.herokuapp.com/contact`, {
-          method:'post',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(newData)
-        }).then(res => res.json() )
-          .then((newData) =>{
-            console.log('sukses', newData)
-            getData();
-          })
-      } catch (error) {
-        alert(error.message)
-        console.log(error)
-      }
-  }, [])
-
-  const editData = React.useCallback( async(id:string, newData:ModelContact) => {
+  const post = async (newData:ObjectModelContact) => {
     try {
+      const rowAdd:ModelContact ={
+        firstName: newData.firstName,
+        lastName: newData.lastName,
+        age: newData.age,
+        photo: newData.photo
+      }
+   
+      const result = await axios.post<ObjectModelContact>(
+        `https://simple-contact-crud.herokuapp.com/contact`,
+        rowAdd,{
+          headers: {'Content-Type': 'application/json',}
+        })
+        if(result.status === 201 || result.status === 200){
+          const rowRespon:ObjectModelContact[]= [{
+            id:result.data.id,
+            firstName:result.data.firstName,
+            lastName: result.data.lastName,
+            age: result.data.age,
+            photo: result.data.photo
+          }]
+          dispatch(contactAdd(rowRespon[0]))
+          setStateLoading({loading:false});
+        }
+      return
+    } catch (error) {
+      alert(error.message)
+      setStateLoading({loading:false});
+    }
+  }
+  const editData =async(newData:ObjectModelContact, oldData?:ObjectModelContact) => {
+    try {
+      if(!oldData) return;
       const resultData = {
         firstName: newData.firstName,
         lastName: newData.lastName,
         age: newData.age,
         photo: newData.photo
       }
-      fetch(`https://simple-contact-crud.herokuapp.com/contact/${id}`, {
-        method:'put',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(resultData)
-      }).then(res => res.json() )
-        .then((newData) =>{
-          console.log('sukses', newData)
-          getData();
-        })
-     
+      const result = await axios.put(`https://simple-contact-crud.herokuapp.com/contact/${newData.id}`,
+      resultData,{
+        headers: {'Content-Type': 'application/json',}
+      })
+      if(result.status === 200 || result.status === 201){
+        dispatch(contacUpdate(newData))
+      }
+    
     } catch (error) {
       alert(error.message);
     }
-  },[])
-
-  const deleteData = React.useCallback( async(id:string) => {
+  }
+  const deleteData = async(oldData:ObjectModelContact) => {
     try {
-      await fetch(`https://simple-contact-crud.herokuapp.com/contact/${id}`, {
-        method:'delete',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }).then(res => res.json() )
-        .then((newData) =>{
-          console.log('sukses', newData)
-          getData();
-        })
+      setStateLoading({loading:true});
+      await axios.delete<ObjectModelContact>(
+        `https://simple-contact-crud.herokuapp.com/contact/${oldData.id}`,
+        {
+          headers: {'Content-Type': 'application/json',}
+        }
+      )
+      dispatch(contactDelete(oldData));
+      setStateLoading({loading:false});
+      return;
     } catch (error) {
-      console.log(error.message)
+      alert(error.message)
+      setStateLoading({loading:false});
     }
-  },[])
- 
+  }
+  const rowDataTabel = contactState.map(o => ({...o}))
+  
   return (
     <React.Fragment>
-      {contact.loading &&  <LinearProgress /> }
-      {contact.error && <Alert>{contact.error.message}</Alert>}
+      {stateLoading.loading &&  <LinearProgress /> }
+      {stateLoading.error && <Alert>{stateLoading.error.message}</Alert>}
       <DailogAddForm
          open={openDialogAdd}
          setOpen={setOpenDialogAdd}
@@ -110,44 +126,33 @@ export default function ContentPage(){
           age,
           photo
          ) => {
-           const newData = {
+           const newData= {
+            id:"",
             firstName,
             lastName,
             age,
             photo
            }
-           post(newData)
-           console.log(JSON.stringify(newData))
+           post(newData);
+          
          }}
       />
       <MaterialTable
       title="Table new Data"
+      options={{ search: false }}
       columns={[
-        {
-          title: 'tableData.id ',
-          field: 'tableData',
-          render: (rowData) => {
-            return(
-            <span>{rowData.tableData.id}</span>
-            )
-          },
-          editable: 'never'
-        },
-       
-        { title: 'age', field: 'age', type:"numeric" },
-        { title: 'firstName', field: 'firstName' },
-        { title: 'lastName', field: 'lastName' },
-        {
-          title: '',
-          field: 'id',
-          render: rowData => <></>,
-          editable: 'never'
+        { title: 'First Name', field: 'firstName' },
+        { title: 'Last Name', field: 'lastName' },
+        { title: 'Age',
+          field: 'age',
+          type:"numeric",
+          render: (rowData) => <>{rowData.age} years</>
         },
         { 
           title: 'photo', 
           field: 'photo', 
           render:  (rowData, props) => {
-            if(rowData.photo.length <=5){
+            if(rowData.photo.length <=10){
               return(
                 <img  style={{ height: 36, }} src="/imageDefault.png" alt="" />
               )
@@ -160,9 +165,8 @@ export default function ContentPage(){
             )
           }
         },
-        
       ]}
-      data={contact.result.data}
+      data={rowDataTabel}
       actions={[
         {
           icon: "refresh",
@@ -178,16 +182,25 @@ export default function ContentPage(){
           isFreeAction: true,
           onClick: (event) => {
             setOpenDialogAdd(true);
-            console.log('add data')
+          },
+        },
+        {
+          icon: "info",
+          tooltip: "Detail Produk",
+          onClick: (event, rowData) => {
+            const selectedData = rowData as ObjectModelContact;
+            if (selectedData) {
+              console.log(selectedData);
+
+            }
           },
         },
       ]}
       editable={{
-        onRowUpdate: (newData, oldData) => editData(newData.id, newData),
-        onRowDelete: (oldData) => deleteData(oldData.tableData.id),
+        onRowUpdate: (newData, oldData) => editData(newData, oldData),
+        onRowDelete: (oldData) => deleteData(oldData),
       }}
     />
-     
     </React.Fragment>
   )
 }

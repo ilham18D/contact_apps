@@ -1,9 +1,27 @@
 import React from "react";
 import {Header, Footer} from './components'
 import { useStyleDashboard } from "./style";
+import { useDispatch } from "react-redux";
+import axios from 'axios';
 import Content from './page/content'
-function App() {
+import {
+  contactAddMany,
+} from './store'
+
+const App = () => {
+  const dispatch = useDispatch();
   const classes = useStyleDashboard();
+  React.useEffect(() => {
+    const unsub = async() => {
+      const result = await axios.get(`https://simple-contact-crud.herokuapp.com/contact`);
+      if(result.status === 200) {
+        dispatch(contactAddMany(result.data.data))
+      }
+    }
+    unsub();
+     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   return (
    <div className={classes.root}>
       <div className={classes.app}>
@@ -16,7 +34,6 @@ function App() {
       </footer>
     </div>
    </div>
-
   );
 }
 

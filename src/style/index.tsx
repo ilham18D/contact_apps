@@ -116,7 +116,7 @@ export const useStyleDashboard = makeStyles((theme: Theme) =>
     },
     main: {
       flex: 1,
-      padding: theme.spacing(6, 20),
+      padding: theme.spacing(4,0),
       background: '#eaeff1',
     },
     footer: {

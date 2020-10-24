@@ -75,6 +75,7 @@ export default function DailogAddForm({
               label="age"
               variant="outlined"
               margin="dense"
+              InputProps={{ inputProps: { min: 0, max: 100 } }}
               type="number"
               fullWidth
             />
