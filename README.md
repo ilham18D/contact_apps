@@ -17,3 +17,8 @@ yarn start = localhost:3000
     * react js
     * material ui
     * material-table
+    * axios
+    * react-redux
+
+
+This project was live in firebase hosting  [contac-apps](https://contactapps-c9df7.web.app/).
