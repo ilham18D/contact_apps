@@ -12,7 +12,7 @@ export const contactSlice = createSlice({
             return state;
         },
         contactAdd(state, action: PayloadAction<ObjectModelContact>) {
-            state = [ action.payload , ...state];
+            state =[action.payload, ...state];
             return state;
         },
         contacUpdate(state, action: PayloadAction<ObjectModelContact>){

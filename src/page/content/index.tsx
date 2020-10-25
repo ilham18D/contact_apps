@@ -3,13 +3,13 @@ import MaterialTable from "material-table";
 import {RequestResult, ModelContact, ObjectModelContact} from '../../api/models';
 import LinearProgress from "@material-ui/core/LinearProgress";
 import DailogAddForm from "./dailogAddForm";
+import Details from "./details"
 import { Alert } from "@material-ui/lab";
 import axios from 'axios';
 import {
   RootState,
   contactAddMany,
   contacUpdate,
-  contactAdd,
   contactDelete
 } from '../../store'
 
@@ -23,6 +23,7 @@ export default function ContentPage(){
   const [stateLoading, setStateLoading] = React.useState<RequestResult<ObjectModelContact[]>>({
     loading: false,
   })
+  const [stateDetails, setStateDetails ] = React.useState<ObjectModelContact | undefined>(undefined)
   React.useEffect( () => {
     getData()
     // eslint-disable-next-line
@@ -33,7 +34,9 @@ export default function ContentPage(){
   const getData = async () => {
     try {
       setStateLoading({loading:true});
-      const urlApi = await axios.get(`https://simple-contact-crud.herokuapp.com/contact`);
+      const urlApi = await axios.get(`https://simple-contact-crud.herokuapp.com/contact`,{
+        headers: {'Content-Type': 'application/json',}
+      });
       if(urlApi.status === 200) {
         setStateLoading({loading:false});
         dispatch(contactAddMany(urlApi.data.data))
@@ -44,28 +47,22 @@ export default function ContentPage(){
   }
   const post = async (newData:ObjectModelContact) => {
     try {
+      setStateLoading({loading:true});
       const rowAdd:ModelContact ={
         firstName: newData.firstName,
         lastName: newData.lastName,
         age: newData.age,
         photo: newData.photo
       }
-   
       const result = await axios.post<ObjectModelContact>(
         `https://simple-contact-crud.herokuapp.com/contact`,
         rowAdd,{
           headers: {'Content-Type': 'application/json',}
         })
-        if(result.status === 201 || result.status === 200){
-          const rowRespon:ObjectModelContact[]= [{
-            id:result.data.id,
-            firstName:result.data.firstName,
-            lastName: result.data.lastName,
-            age: result.data.age,
-            photo: result.data.photo
-          }]
-          dispatch(contactAdd(rowRespon[0]))
+        if(result.status === 201){
+          getData()
           setStateLoading({loading:false});
+          alert(result.statusText);
         }
       return
     } catch (error) {
@@ -97,7 +94,7 @@ export default function ContentPage(){
   const deleteData = async(oldData:ObjectModelContact) => {
     try {
       setStateLoading({loading:true});
-      await axios.delete<ObjectModelContact>(
+      await axios.delete(
         `https://simple-contact-crud.herokuapp.com/contact/${oldData.id}`,
         {
           headers: {'Content-Type': 'application/json',}
@@ -117,6 +114,10 @@ export default function ContentPage(){
     <React.Fragment>
       {stateLoading.loading &&  <LinearProgress /> }
       {stateLoading.error && <Alert>{stateLoading.error.message}</Alert>}
+      <Details
+        details = {stateDetails}
+        close= {() => setStateDetails(undefined)}
+      />
       <DailogAddForm
          open={openDialogAdd}
          setOpen={setOpenDialogAdd}
@@ -138,8 +139,7 @@ export default function ContentPage(){
          }}
       />
       <MaterialTable
-      title="Table new Data"
-      options={{ search: false }}
+      title="Table"
       columns={[
         { title: 'First Name', field: 'firstName' },
         { title: 'Last Name', field: 'lastName' },
@@ -190,8 +190,7 @@ export default function ContentPage(){
           onClick: (event, rowData) => {
             const selectedData = rowData as ObjectModelContact;
             if (selectedData) {
-              console.log(selectedData);
-
+              setStateDetails(selectedData);
             }
           },
         },

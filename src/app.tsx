@@ -4,6 +4,7 @@ import { useStyleDashboard } from "./style";
 import { useDispatch } from "react-redux";
 import axios from 'axios';
 import Content from './page/content'
+
 import {
   contactAddMany,
 } from './store'
@@ -26,12 +27,13 @@ const App = () => {
    <div className={classes.root}>
       <div className={classes.app}>
       <Header />
-      <main className={classes.main}>
-       <Content />
-      </main>
+        <main className={classes.main}>
+          <Content />
+        </main>
       <footer className={classes.footer}>
         <Footer />
       </footer>
+
     </div>
    </div>
   );
